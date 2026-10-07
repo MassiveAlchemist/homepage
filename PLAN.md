@@ -34,7 +34,7 @@ Logga in i Pages CMS → "Nytt projekt" → fyll i titel, text, taggar, välj me
 ---
 titel: "Sommarnatt i Hälsingland"
 datum: 2026-06-21
-typ: Kortfilm            # valbar lista: Kortfilm, Musikvideo, Reklam, Dokumentär, Foto, Podd, Övrigt
+typ: [textil, elektronik, fiberoptik]   # en eller flera, se "Typer" nedan
 medverkande: [alice, kalle]   # kopplas till personsidor
 roller:                   # valfritt, vem gjorde vad
   - { person: alice, roll: Regi }
@@ -52,6 +52,27 @@ Brödtext om projektet: idé, process, resultat ...
 
 Bilderna ligger i samma mapp som texten → lätt att hålla ordning, och Astro optimerar dem automatiskt (rätt storlek, WebP/AVIF, lazy loading).
 
+### Typer (`src/content/typer.yml`)
+Gräsroot arbetar med alla sorters medier och material, så **typ** är en egen, sökbar och filtrerbar dimension – skild från de fria taggarna. Ett projekt kan ha **flera typer** (t.ex. ett plagg med inbyggd fiberoptik = `textil` + `fiberoptik` + `elektronik`).
+
+Startlista:
+
+| Typ | Exempel |
+|---|---|
+| `textil` | Plagg, vävar, broderi, mjuka skulpturer |
+| `elektronik` | Kretsar, sensorer, mikrokontroller, ljud |
+| `fiberoptik` | Ljusledare, belysning, ljusinstallationer |
+| `3d-print` | Printade objekt, prototyper, formar |
+| `odling` | Växter, mycel, levande material |
+
+- Listan ligger i **en** fil (`typer.yml`) med namn, kort beskrivning och ev. ikon/färg per typ. Ny typ = en ny rad (går att göra i CMS:et), så listan kan växa fritt.
+- I CMS:et väljs typer från listan (flerval) – inga stavfel eller dubbletter.
+- Bygget validerar att varje projekts typer finns i listan.
+- Varje typ får en egen sida, t.ex. `/typ/fiberoptik`, med beskrivning och alla projekt.
+- Typerna visas som tydliga "etiketter" på projektkorten och är sökbara i fritextsöket (söker man "odling" hittar man både projekt av typen odling och projekt som nämner odling i texten).
+
+**Typ vs. taggar:** typ = *vad det är gjort av/med* (styrd lista). Taggar = allt annat, fritt (tema, plats, teknik i detalj, t.ex. `arduino`, `ull`, `utställning`).
+
 ### Personer (`src/content/personer/<namn>.md`)
 Namn, porträtt, kort bio, roller/kompetenser, länkar (Instagram, egen sajt, e-post).
 
@@ -65,8 +86,9 @@ Fri text, men CMS:et visar befintliga taggar som förslag för att undvika dubbl
 | Sida | Innehåll |
 |---|---|
 | **Start** `/` | Kort intro om Gräsroot, utvalda projekt, senaste projekt, sökruta. |
-| **Projekt** `/projekt` | Rutnät med alla projekt. Filter: typ, tagg, person, år. Sortering: nyast först. |
+| **Projekt** `/projekt` | Rutnät med alla projekt. Filter: typ (flerval), tagg, person, år. Sortering: nyast först. |
 | **Projektsida** `/projekt/<slug>` | Omslag, text, galleri (klicka för helskärm), video, medverkande med roller, taggar (klickbara), "fler liknande projekt". |
+| **Typ** `/typ/<typ>` | Beskrivning av typen + alla projekt av den typen. Översikt på `/typ`. |
 | **Tagg** `/taggar/<tagg>` | Alla projekt med en viss tagg. |
 | **Personer** `/personer` + `/personer/<namn>` | Medlemmarna och var och ens projekt. |
 | **Om / Kontakt** `/om` | Vilka ni är, vad ni gör, kontaktuppgifter/formulär. |
@@ -76,8 +98,9 @@ Fri text, men CMS:et visar befintliga taggar som förslag för att undvika dubbl
 
 ## 4. Sökfunktionen i detalj
 
-- **Fritext** över titel, brödtext, kund, taggar och namn på medverkande.
-- **Filter** (Pagefind filters): typ, tagg, medverkande, år – går att kombinera.
+- **Fritext** över titel, brödtext, kund, typer, taggar och namn på medverkande.
+- **Filter** (Pagefind filters): typ, tagg, medverkande, år – går att kombinera (t.ex. *textil + elektronik*).
+- **Typ först:** typerna visas som klickbara knappar direkt under sökrutan, så man kan bläddra utan att veta vad man letar efter.
 - **Snabbt:** indexet delas upp i små bitar, så bara det som behövs laddas ner.
 - **Svenska:** sätt `lang="sv"` så att ord stamhanteras rätt ("filmer" hittar "film"). Å, ä, ö fungerar.
 - **Delbara sökningar:** filterval sparas i URL:en (`/projekt?tagg=natur&person=alice`).
@@ -99,14 +122,14 @@ Fri text, men CMS:et visar befintliga taggar som förslag för att undvika dubbl
 
 ### Fas 1 – Grund (≈1 helg)
 - [ ] Rensa repot och sätt upp Astro-projektet.
-- [ ] Definiera innehållsscheman (projekt, personer) med validering.
+- [ ] Definiera innehållsscheman (projekt, personer, typer) med validering.
 - [ ] Grundlayout: sidhuvud, sidfot, startsida, projektlista, projektsida.
 - [ ] Lägg in 3–5 riktiga projekt som testmaterial.
 - [ ] Koppla till Cloudflare Pages/Netlify → automatisk publicering.
 
 ### Fas 2 – Sök och navigering (≈1 kväll–1 dag)
 - [ ] Pagefind-integration med filter.
-- [ ] Taggsidor, personsidor, "liknande projekt".
+- [ ] Typsidor, taggsidor, personsidor, "liknande projekt" (delad typ/tagg).
 - [ ] Filter i projektlistan, sparade i URL.
 
 ### Fas 3 – Enkel redigering (≈1 kväll)
@@ -137,8 +160,9 @@ homepage/
     │   │       ├── index.md
     │   │       ├── omslag.jpg
     │   │       └── bild1.jpg
-    │   └── personer/
-    │       └── alice.md
+    │   ├── personer/
+    │   │   └── alice.md
+    │   └── typer.yml          # textil, elektronik, fiberoptik, 3d-print, odling
     ├── content.config.ts      # scheman och validering
     ├── components/            # ProjektKort, Galleri, Sök, Filter ...
     ├── layouts/
@@ -146,6 +170,7 @@ homepage/
         ├── index.astro
         ├── om.astro
         ├── projekt/
+        ├── typ/
         ├── taggar/
         └── personer/
 ```
@@ -164,7 +189,7 @@ homepage/
 
 ## 9. Frågor att besluta innan vi bygger
 
-1. **Vilka typer av projekt** gör ni? (Film, musik, foto, event, podd …) – styr listan över "typ".
+1. ~~Vilka typer av projekt gör ni?~~ **Beslutat:** typ är en sökbar, utbyggbar lista. Start: textil, elektronik, fiberoptik, 3d-print, odling.
 2. **Hur många medlemmar** och ska alla kunna publicera direkt, eller ska någon granska först? (Pages CMS kan spara som utkast.)
 3. **Domän** – finns `grasroot.se` eller liknande?
 4. **Språk** – bara svenska, eller även engelska?
