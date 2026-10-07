@@ -39,13 +39,45 @@ Medlem i Pages CMS  →  "Spara"  →  commit till main  →  Cloudflare bygger 
                                                          └─ bygget validerar innehållet först
 ```
 
-- **Ingen granskning:** alla medlemmar bjuds in som medarbetare på GitHub-repot och sparar direkt till `main`.
+- **Ingen granskning:** alla medlemmar sparar direkt till `main`.
+- **Inloggning – ingen behöver eget GitHub-konto:** repot ägs av Gräsroots gemensamma GitHub-konto. Medlemmar bjuds in till Pages CMS **med sin e-postadress** och loggar in via en länk i mejlet. Varje person har en egen inloggning, så det syns vem som ändrat vad, och ingen behöver dela lösenordet till det gemensamma kontot.
+  - Ny medlem = en inbjudan i Pages CMS + en personfil. Tar ett par minuter, oavsett om ni är 3 eller 30.
+  - Den som slutar: ta bort inbjudan, sätt `aktiv: false` på personen – deras projekt ligger kvar.
+  - *Om ni blir fler och vill:* gör det gemensamma kontot till en gratis **GitHub-organisation** så att flera kan administrera.
 - **Skyddsnät i stället för granskning:**
   - **Validering vid bygget:** saknad titel, okänd typ, okänd person, trasig bildlänk m.m. stoppar bygget med ett tydligt felmeddelande – och **den tidigare versionen ligger kvar live**. Ingen kan "ta sönder" sajten.
   - **Historik:** varje ändring är en commit med namn på den som gjorde den. Allt kan återställas.
   - **Notis vid fel:** misslyckat bygge → e-post/Discord-notis till gruppen (Cloudflare-notis eller GitHub Action).
 - **Dolt-läge (valfritt):** en kryssruta `dold` för den som vill spara ett halvfärdigt projekt utan att det syns. Ingen godkännandeprocess.
 - **Bildstorlek:** CMS:et begränsar uppladdningar (t.ex. max 10 MB), och en GitHub Action skalar automatiskt ner originalbilder över ~3000 px så att repot inte växer i onödan. Astro skapar sedan rätt storlekar och format (AVIF/WebP) för webben.
+
+---
+
+## 2b. Var materialet ligger
+
+Idag ligger allt lokalt på era datorer. Efter publicering:
+
+| Material | Var det ligger | Hur det kommer dit |
+|---|---|---|
+| **Texter** | I Git-repot på GitHub (en fil per projekt) | Skrivs i CMS-formuläret |
+| **Bilder** | I Git-repot, i projektets mapp. Webbversioner (flera storlekar, AVIF/WebP) skapas vid bygget och levereras från Cloudflares nätverk. | Laddas upp i CMS-formuläret |
+| **Korta klipp** (≤ ~15 s, t.ex. en fiberoptik-loop) | I Git-repot som `.mp4` (komprimerad till några MB), visas som tyst loop | Laddas upp i CMS-formuläret |
+| **Längre video** | **YouTube** (gärna "olistad") eller Vimeo – sajten bäddar in den | Ladda upp där, klistra in länken i formuläret |
+| **Original** (råfiler, högupplöst, projektfiler) | **Inte på sajten.** Behåll på era datorer + ett gemensamt arkiv (t.ex. en delad Google Drive-mapp) | – |
+
+- **GitHub = master för allt publicerat.** Repot är också en backup: allt publicerat material + hela historiken. Vem som helst kan ladda ner en kopia.
+- **Storlek:** bilder skalas ner till max ~3000 px (≈0,5–1 MB) vid uppladdning. GitHub-repon fungerar bra upp till ~1 GB ≈ **1 000–2 000 bilder**, d.v.s. många år av projekt. Filer över 25 MB tillåts inte (gäller främst video → YouTube).
+- **Om ni växer ur det:** bilderna flyttas till **Cloudflare R2** (10 GB gratis, sedan ≈ 0,15 kr/GB/mån). Datalagret är byggt så att bara bildadresserna ändras – CMS, frontend och sök påverkas inte.
+
+### Flytta in befintligt material (engångsjobb)
+
+I stället för att lägga in allt gammalt projekt för projekt i CMS:et:
+
+1. Varje medlem lägger sina projekt i en delad mapp, **en undermapp per projekt**: bilder, ev. klipp och en ifylld textmall (`projekt.txt`: titel, år, typer, taggar, medverkande, text sv/en, YouTube-länk).
+2. Ett importskript gör om varje mapp till ett färdigt projekt (skalar bilder, skapar filen, validerar) och listar det som saknas.
+3. Granska på förhandsversionen → publicera alla på en gång.
+
+Därefter läggs nya projekt in via CMS:et.
 
 ---
 
@@ -130,7 +162,7 @@ namn: "Gräsroot"                 # byt här → byts överallt
 domän: "https://grasroot.pages.dev"
 sv: { slogan: "...", om: "...", kontakt: "..." }
 en: { slogan: "...", about: "...", contact: "..." }
-epost: "hej@..."
+epost: "alice@bulukin.se"     # kontakt på sajten; skyddas mot spam-robotar
 sociala: { instagram: "...", ... }
 ```
 
@@ -182,7 +214,7 @@ Knappar, rubriker och meddelanden ("Sök", "Visa alla", "Inga träffar", "Endast
 - **SEO:** titlar och beskrivningar per sida och språk, Open Graph-bilder från omslaget, strukturerad data (`CreativeWork`, `Person`, `Organization`), sitemap, `robots.txt`.
 - **RSS-flöde** per språk med nya projekt (gratis att lägga till).
 - **Statistik:** Cloudflare Web Analytics (cookiefri → ingen cookiebanner).
-- **Kontakt:** e-postlänk från start; ev. formulär via Cloudflare Pages Function eller Formspree senare.
+- **Kontakt:** e-postlänk till adressen i `sajt.yml` (alice@bulukin.se). Adressen kodas i sidan så att spam-robotar inte kan skörda den. Inget formulär.
 - **Domän:** tills namnet är bestämt körs sajten på `*.pages.dev`. När domän finns: lägg in den i `sajt.yml` och koppla den i Cloudflare (≈10 min).
 - **Kvalitetskontroller i CI** (GitHub Actions vid varje ändring): innehållsvalidering, typkontroll, trasiga interna länkar, oöversatta texter (varning), bildstorlek.
 
@@ -194,6 +226,7 @@ Knappar, rubriker och meddelanden ("Sök", "Visa alla", "Inga träffar", "Endast
 /
 ├── .pages.yml                    # CMS: formulär för projekt, personer, typer, taggar, sajt
 ├── .github/workflows/            # validering, bildnedskalning, byggnotiser
+├── scripts/importera.ts          # engångsimport av befintligt material
 ├── astro.config.mjs              # i18n, integrationer
 ├── src/
 │   ├── content/
@@ -278,7 +311,8 @@ Sidhuvud (logga, nav, språkväxlare, sök) · Sidfot · Projektkort · Projektr
 ### Fas 3 – Publicering för alla
 - [ ] Pages CMS-formulär (`.pages.yml`) med sv/en-fält sida vid sida.
 - [ ] GitHub Actions: validering, bildnedskalning, notis vid misslyckat bygge.
-- [ ] Bjud in alla medlemmar.
+- [ ] Koppla Pages CMS till det gemensamma GitHub-kontot och bjud in medlemmarna via e-post.
+- [ ] Importskript + textmall för befintligt material; importera de tre medlemmarnas projekt.
 - [ ] Guide: "Så lägger du upp ett projekt".
 
 ### Fas 4 – Canva-design in
@@ -309,11 +343,13 @@ Sidhuvud (logga, nav, språkväxlare, sök) · Sidfot · Projektkort · Projektr
 - ✅ Alla medlemmar publicerar direkt (skyddsnät: validering + historik).
 - ✅ Svenska (standard) och engelska.
 - ✅ Namn och domän är inte bestämda → finns bara i `sajt.yml`, tillfällig adress på `*.pages.dev`.
-- ✅ Frontend designas i Canva; den här planen täcker allt bakom.
+- ✅ Frontend designas i Canva; den här planen täcker allt bakom. Länk till Canva-designen kommer inom några dagar.
+- ✅ Tre medlemmar nu, fler senare → inbjudan via e-post i Pages CMS, inget eget GitHub-konto behövs.
+- ✅ Ett gemensamt GitHub-konto (redan kopplat) äger repot.
+- ✅ Kontakt: e-post, alice@bulukin.se. Inget formulär.
+- ✅ Bilder och korta klipp i repot, längre video på YouTube/Vimeo, original i eget arkiv.
 
 **Öppet**
-1. **Hur många medlemmar** – och har alla GitHub-konton? (Behövs för att logga in i CMS:et; det är gratis.)
-2. **Var ligger videorna idag?** (Vimeo, YouTube, Drive …)
-3. **Kontakt** – räcker e-post, eller formulär?
-4. **Notiser vid fel** – e-post, Discord eller något annat?
-5. **Canva** – när ungefär finns en första design? Fas 1–3 kan byggas klart innan dess.
+1. **Notiser vid misslyckat bygge** – till alice@bulukin.se, eller någon annan/flera?
+2. **YouTube eller Vimeo** för längre video? (YouTube rekommenderas – gratis och obegränsat.)
+3. **Gemensamt arkiv för original** – har ni redan en delad mapp (Google Drive, Dropbox …)? Då kan samma mapp användas för importen.
